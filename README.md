@@ -1,3 +1,6 @@
+                                                                                                                                        # Macbook-ssh-hacker-brute-force
+
+
 The script asks for a target IP address, an SSH username, and the path to a password list. It then tries each password in the list until it either logs in successfully or reaches the end of the file.
 Run
 python3 ssh_bruteforce.py
