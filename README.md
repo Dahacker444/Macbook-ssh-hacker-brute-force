@@ -1,5 +1,6 @@
-# Macbook-ssh-hacker-brute-force
-You input username and ip of a macbook and it looks for a rockyou.txt in you downloads and guesses the password giving you ssh access cam only be run from another macbook
-USE FOR EDUCATIONAL PURPOSES  ONLY  DO NOT  USE THIS FOR HACKING WIthOUT SOMEONES PERMISSION OR ON your OWN DEVICE
+The script asks for a target IP address, an SSH username, and the path to a password list. It then tries each password in the list until it either logs in successfully or reaches the end of the file.
+Run
+python3 ssh_bruteforce.py
+Disclaimer
 
-run it using python3  ssh_bruteforce.py
+Only use this on systems you own or have explicit permission to test. Unauthorized access to computer systems is illegal, and this project is not intended for that purpose.
